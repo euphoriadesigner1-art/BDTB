@@ -1,5 +1,10 @@
 import streamlit as st
 import pandas as pd
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 from trader.data_fetcher import DataFetcher
 from trader.indicators import TechnicalIndicators
 from trader.signals import SignalGenerator
