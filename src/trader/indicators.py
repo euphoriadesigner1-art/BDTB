@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-import talib
 from typing import Tuple
 
 
@@ -11,37 +10,33 @@ class TechnicalIndicators:
         self.data = data
     
     def rsi(self, period: int = 14) -> pd.Series:
-        close = self.data["Close"].values
-        rsi = talib.RSI(close, timeperiod=period)
-        return pd.Series(rsi, index=self.data.index)
+        delta = self.data["Close"].diff()
+        gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
+        rs = gain / loss
+        rsi = 100 - (100 / (1 + rs))
+        return rsi
     
     def macd(self, fast: int = 12, slow: int = 26, signal: int = 9) -> Tuple[pd.Series, pd.Series, pd.Series]:
-        close = self.data["Close"].values
-        macd, macd_signal, macd_hist = talib.MACD(close, fastperiod=fast, slowperiod=slow, signalperiod=signal)
-        return (
-            pd.Series(macd, index=self.data.index),
-            pd.Series(macd_signal, index=self.data.index),
-            pd.Series(macd_hist, index=self.data.index)
-        )
+        exp1 = self.data["Close"].ewm(span=fast, adjust=False).mean()
+        exp2 = self.data["Close"].ewm(span=slow, adjust=False).mean()
+        macd = exp1 - exp2
+        signal_line = macd.ewm(span=signal, adjust=False).mean()
+        hist = macd - signal_line
+        return macd, signal_line, hist
     
     def sma(self, period: int) -> pd.Series:
-        close = self.data["Close"].values
-        sma = talib.SMA(close, timeperiod=period)
-        return pd.Series(sma, index=self.data.index)
+        return self.data["Close"].rolling(window=period).mean()
     
     def ema(self, period: int) -> pd.Series:
-        close = self.data["Close"].values
-        ema = talib.EMA(close, timeperiod=period)
-        return pd.Series(ema, index=self.data.index)
+        return self.data["Close"].ewm(span=period, adjust=False).mean()
     
     def bollinger_bands(self, period: int = 20, nbdevup: float = 2.0, nbdevdn: float = 2.0) -> Tuple[pd.Series, pd.Series, pd.Series]:
-        close = self.data["Close"].values
-        upper, middle, lower = talib.BBANDS(close, timeperiod=period, nbdevup=nbdevup, nbdevdn=nbdevdn)
-        return (
-            pd.Series(upper, index=self.data.index),
-            pd.Series(middle, index=self.data.index),
-            pd.Series(lower, index=self.data.index)
-        )
+        sma = self.data["Close"].rolling(window=period).mean()
+        std = self.data["Close"].rolling(window=period).std()
+        upper = sma + (std * nbdevup)
+        lower = sma - (std * nbdevdn)
+        return upper, sma, lower
     
     def calculate_all(self) -> pd.DataFrame:
         """Calculate all indicators and return as DataFrame"""

@@ -7,17 +7,13 @@ dependencies = [
     "yfinance>=0.2.36",
     "pandas>=2.1.0",
     "numpy>=1.26.0",
-    "ta-lib>=0.4.28",
     "scikit-learn>=1.4.0",
-    "xgboost>=2.0.0",
     "streamlit>=1.30.0",
     "plotly>=5.18.0",
     "python-dotenv>=1.0.0",
-    "oandapyV20>=0.6.7",
 ]
 
-[tool.pytest.ini_options]
-asyncio_mode = "auto"
+[project.optional-dependencies]
 dev = [
     "pytest>=8.0.0",
     "pytest-asyncio>=0.23.0",
@@ -26,3 +22,6 @@ dev = [
 
 [project.scripts]
 trader = "trader.cli:main"
+
+[tool.streamlit]
+requirements = ["yfinance", "pandas", "numpy", "scikit-learn", "streamlit", "plotly", "python-dotenv"]

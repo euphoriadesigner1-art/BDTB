@@ -1,40 +1,72 @@
 import pandas as pd
 import numpy as np
-import talib
 from typing import Dict, List
 
 
 class PatternDetector:
     """Detect candlestick and chart patterns"""
     
-    PATTERNS = [
-        "CDLDOJI", "CDLHAMMER", "CDLHANGINGMAN", "CDLENGULFING",
-        "CDLMORNINGSTAR", "CDLEVENINGSTAR", "CDLPIERCING",
-        "CDLDARKCLOUDCOVER", "CDLXSIDEGAP3METHODS"
-    ]
-    
     def __init__(self, data: pd.DataFrame):
         self.data = data
     
+    def _get_body(self, i):
+        return abs(self.data["Close"].iloc[i] - self.data["Open"].iloc[i])
+    
+    def _get_upper_shadow(self, i):
+        return self.data["High"].iloc[i] - max(self.data["Close"].iloc[i], self.data["Open"].iloc[i])
+    
+    def _get_lower_shadow(self, i):
+        return min(self.data["Close"].iloc[i], self.data["Open"].iloc[i]) - self.data["Low"].iloc[i]
+    
+    def _is_doji(self, i, threshold=0.1):
+        body = self._get_body(i)
+        range_val = self.data["High"].iloc[i] - self.data["Low"].iloc[i]
+        if range_val == 0:
+            return False
+        return body / range_val < threshold
+    
+    def _is_hammer(self, i):
+        body = self._get_body(i)
+        lower_shadow = self._get_lower_shadow(i)
+        upper_shadow = self._get_upper_shadow(i)
+        range_val = self.data["High"].iloc[i] - self.data["Low"].iloc[i]
+        return lower_shadow > body * 2 and upper_shadow < body
+    
+    def _is_engulfing(self, i):
+        if i < 1:
+            return False
+        prev_bearish = self.data["Close"].iloc[i-1] < self.data["Open"].iloc[i-1]
+        curr_bullish = self.data["Close"].iloc[i] > self.data["Open"].iloc[i]
+        prev_body = abs(self.data["Close"].iloc[i-1] - self.data["Open"].iloc[i-1])
+        curr_body = abs(self.data["Close"].iloc[i] - self.data["Open"].iloc[i])
+        return prev_bearish and curr_bullish and curr_body > prev_body
+    
     def detect_all(self) -> Dict[str, List[Dict]]:
         """Detect all patterns"""
-        o = np.asarray(self.data["Open"].values, dtype=np.float64)
-        h = np.asarray(self.data["High"].values, dtype=np.float64)
-        l = np.asarray(self.data["Low"].values, dtype=np.float64)
-        c = np.asarray(self.data["Close"].values, dtype=np.float64)
-        
         results = {"candlesticks": []}
         
-        for pattern in self.PATTERNS:
-            func = getattr(talib, pattern)
-            signals = func(o, h, l, c)
+        for i in range(len(self.data)):
+            pattern = None
+            signal = 0
             
-            found = np.where(signals != 0)[0]
-            if len(found) > 0:
+            if self._is_doji(i):
+                pattern = "DOJI"
+                signal = 0
+            elif self._is_hammer(i):
+                pattern = "HAMMER"
+                signal = 1
+            elif self._is_hammer(i) and self.data["Close"].iloc[i] < self.data["Open"].iloc[i]:
+                pattern = "HANGINGMAN"
+                signal = -1
+            elif self._is_engulfing(i):
+                pattern = "ENGULFING"
+                signal = 1 if self.data["Close"].iloc[i] > self.data["Open"].iloc[i] else -1
+            
+            if pattern:
                 results["candlesticks"].append({
                     "pattern": pattern,
-                    "dates": [self.data.index[i] for i in found],
-                    "signals": [int(signals[i]) for i in found]
+                    "dates": [self.data.index[i]],
+                    "signals": [signal]
                 })
         
         return results
@@ -49,7 +81,7 @@ class PatternDetector:
                 if len(item.get("dates", [])) > 0:
                     latest_date = item["dates"][-1]
                     patterns.append({
-                        "pattern": item["pattern"],
+                        "pattern": "CDL" + item["pattern"],
                         "date": latest_date,
                         "signal": item["signals"][-1]
                     })
