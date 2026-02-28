@@ -1,0 +1,10 @@
+pyproject.toml
+src/trader/__init__.py
+src/trader/data_fetcher.py
+src/trader_bot.egg-info/PKG-INFO
+src/trader_bot.egg-info/SOURCES.txt
+src/trader_bot.egg-info/dependency_links.txt
+src/trader_bot.egg-info/entry_points.txt
+src/trader_bot.egg-info/requires.txt
+src/trader_bot.egg-info/top_level.txt
+tests/test_data_fetcher.py
