@@ -2,7 +2,12 @@ import yfinance as yf
 import pandas as pd
 from typing import Dict, List
 import os
-from .oanda_client import OANDAClient
+
+try:
+    from .oanda_client import OANDAClient
+    OANDA_AVAILABLE = True
+except ImportError:
+    OANDA_AVAILABLE = False
 
 
 class DataFetcher:
@@ -24,16 +29,22 @@ class DataFetcher:
     def fetch_from_oanda(self, symbol: str, period: str = "1y", 
                          interval: str = "1d", api_key: str = None) -> pd.DataFrame:
         """Fetch data from OANDA API"""
+        if not OANDA_AVAILABLE:
+            return pd.DataFrame()
+        
         if api_key is None:
             api_key = os.getenv("OANDA_API_KEY", "")
         
-        if not api_key:
+        if not api_key or not OANDA_AVAILABLE:
             return pd.DataFrame()
         
         oanda_symbol = self._convert_symbol_to_oanda(symbol)
         granularity = self._convert_interval_to_granularity(interval)
         
-        client = OANDAClient(api_key, practice=True)
+        try:
+            client = OANDAClient(api_key, practice=True)
+        except:
+            return pd.DataFrame()
         
         period_map = {"1mo": 30, "3mo": 90, "6mo": 180, "1y": 365, "5y": 1825}
         count = period_map.get(period, 365)
