@@ -293,11 +293,11 @@ if st.button("Generate Signals", type="primary"):
                 st.stop()
             
             if not hasattr(data, '__len__') or len(data) == 0:
-                st.error(f"No data found for {symbol}. Try a different pair or period.")
+                st.error(f"No data found for {symbol}. The {data_source} API may be blocked. Try Yahoo Finance instead.")
                 st.stop()
             
             if data.empty:
-                st.error(f"No data found for {symbol}. Try a different pair or period.")
+                st.error(f"No data found for {symbol}. The {data_source} API may be blocked. Try Yahoo Finance instead.")
                 st.stop()
                 
         except Exception as e:
