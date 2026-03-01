@@ -12,7 +12,74 @@ from trader.support_resistance import SupportResistance
 from trader.patterns import PatternDetector
 import plotly.graph_objects as go
 
-st.set_page_config(page_title="Billion Dollar Forex Bot", layout="wide")
+st.set_page_config(page_title="Billion Dollar Forex Bot", layout="wide", page_icon="💰")
+
+st.markdown("""
+<style>
+    /* Mobile responsive styles */
+    @media (max-width: 768px) {
+        .stApp {
+            padding-left: 0.5rem !important;
+            padding-right: 0.5rem !important;
+        }
+        .stRadio > div {
+            flex-direction: row !important;
+            flex-wrap: wrap !important;
+            gap: 0.5rem !important;
+        }
+        .stRadio > div > label {
+            padding: 0.25rem 0.5rem !important;
+            font-size: 0.8rem !important;
+        }
+        .stSelectbox, .stTextInput {
+            width: 100% !important;
+        }
+        div[data-testid="stMetric"] {
+            padding: 0.5rem !important;
+            min-width: auto !important;
+        }
+        .stMetric {
+            font-size: 0.9rem !important;
+        }
+        .stButton > button {
+            width: 100% !important;
+            font-size: 1rem !important;
+            padding: 0.75rem !important;
+        }
+        h1 {
+            font-size: 1.5rem !important;
+        }
+        h2 {
+            font-size: 1.25rem !important;
+        }
+        h3 {
+            font-size: 1.1rem !important;
+        }
+        .stTabs {
+            font-size: 0.8rem !important;
+        }
+        div[data-testid="column"] {
+            padding: 0.25rem !important;
+        }
+        .stLineChart {
+            height: 250px !important;
+        }
+        .stDataFrame {
+            font-size: 0.8rem !important;
+        }
+        .st-expander {
+            font-size: 0.85rem !important;
+        }
+    }
+    /* Tablet adjustments */
+    @media (min-width: 769px) and (max-width: 1024px) {
+        .stApp {
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+        }
+    }
+</style>
+""", unsafe_allow_html=True)
 
 if 'theme' not in st.session_state:
     st.session_state.theme = "dark"
@@ -319,7 +386,7 @@ if st.button("Generate Signals", type="primary"):
         st.markdown("---")
         st.subheader("🎯 Trading Signal")
         
-        col1, col2, col3, col4 = st.columns(4)
+        col1, col2, col3, col4 = st.columns((1, 1, 1, 1))
         
         signal_emoji = "🟢" if signal["action"].upper() == "BUY" else ("🔴" if signal["action"].upper() == "SELL" else "🟡")
         
@@ -387,7 +454,7 @@ if st.button("Generate Signals", type="primary"):
         st.subheader("📊 Support & Resistance Levels")
         st.caption("Support is where price tends to find a floor. Resistance is where price tends to hit a ceiling.")
         
-        sr_col1, sr_col2, sr_col3, sr_col4 = st.columns(4)
+        sr_col1, sr_col2, sr_col3, sr_col4 = st.columns((1, 1, 1, 1))
         with sr_col1:
             st.metric("Current Price", f"${risk['entry_price']:.2f}")
         with sr_col2:
@@ -400,7 +467,7 @@ if st.button("Generate Signals", type="primary"):
         
         st.markdown("---")
         
-        col_chart1, col_chart2 = st.columns(2)
+        col_chart1, col_chart2 = st.columns((1, 1))
         
         with col_chart1:
             st.subheader("📈 Price with Moving Averages")
