@@ -277,7 +277,12 @@ if st.button("Generate Signals", type="primary"):
             
             if data_source == "Binance":
                 data = fetcher.fetch_from_binance(actual_symbol, period=period, interval=interval)
-                source_name = "Binance"
+                if data.empty:
+                    st.warning("Binance API unavailable on cloud. Using Yahoo Finance instead.")
+                    data = fetcher.fetch(actual_symbol, period=period, interval=interval)
+                    source_name = "Yahoo Finance (fallback)"
+                else:
+                    source_name = "Binance"
             elif data_source == "OANDA API" and oanda_key:
                 data = fetcher.fetch_from_oanda(actual_symbol, period=period, interval=interval, api_key=oanda_key)
                 source_name = "OANDA API"
