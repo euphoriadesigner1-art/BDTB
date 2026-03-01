@@ -133,15 +133,28 @@ with st.sidebar:
     
     st.markdown("---")
     st.header("Data Source")
-    data_source = st.radio("Choose data source:", ["Yahoo Finance", "OANDA API"], horizontal=True)
+    data_source = st.radio("Choose data source:", ["Yahoo Finance", "Binance", "OANDA API", "MetaTrader 5"], horizontal=True)
     
     oanda_key = None
+    mt5_available = False
     if data_source == "OANDA API":
         oanda_key = st.text_input("OANDA API Key", type="password", 
                                   help="Get your API key from OANDA dashboard")
         st.caption("Use practice account API key for testing")
         if not oanda_key:
             st.warning("Enter your OANDA API key to use OANDA data")
+    
+    if data_source == "MetaTrader 5":
+        try:
+            from trader.mt5_client import MT5Client
+            client = MT5Client()
+            mt5_available = client.is_available()
+            if mt5_available:
+                st.success("MetaTrader 5 is available")
+            else:
+                st.warning("MT5 not installed. Install MetaTrader 5 to use this data source.")
+        except:
+            st.warning("MT5 not available. Install MetaTrader 5 to use this data source.")
     
     st.markdown("---")
     st.markdown("### 📖 Trading Glossary")
@@ -260,9 +273,19 @@ if st.button("Generate Signals", type="primary"):
         try:
             fetcher = DataFetcher()
             
-            # Use Yahoo Finance by default
-            data = fetcher.fetch(actual_symbol, period=period, interval=interval)
             source_name = "Yahoo Finance"
+            
+            if data_source == "Binance":
+                data = fetcher.fetch_from_binance(actual_symbol, period=period, interval=interval)
+                source_name = "Binance"
+            elif data_source == "OANDA API" and oanda_key:
+                data = fetcher.fetch_from_oanda(actual_symbol, period=period, interval=interval, api_key=oanda_key)
+                source_name = "OANDA API"
+            elif data_source == "MetaTrader 5":
+                data = fetcher.fetch_from_mt5(actual_symbol, period=period, interval=interval)
+                source_name = "MetaTrader 5"
+            else:
+                data = fetcher.fetch(actual_symbol, period=period, interval=interval)
             
             # Check if data is valid
             if data is None:

@@ -2,12 +2,19 @@ import yfinance as yf
 import pandas as pd
 from typing import Dict, List
 import os
+import requests
 
 try:
     from .oanda_client import OANDAClient
     OANDA_AVAILABLE = True
 except ImportError:
     OANDA_AVAILABLE = False
+
+try:
+    from .mt5_client import MT5Client
+    MT5_AVAILABLE = True
+except ImportError:
+    MT5_AVAILABLE = False
 
 
 class DataFetcher:
@@ -50,6 +57,72 @@ class DataFetcher:
         count = period_map.get(period, 365)
         
         return client.fetch_candles(oanda_symbol, count=count, granularity=granularity)
+    
+    def fetch_from_mt5(self, symbol: str, period: str = "1y", 
+                       interval: str = "1d") -> pd.DataFrame:
+        """Fetch data from MetaTrader 5"""
+        if not MT5_AVAILABLE:
+            return pd.DataFrame()
+        
+        try:
+            client = MT5Client()
+            if not client.connect():
+                return pd.DataFrame()
+            
+            timeframe_map = {
+                "1m": "1m", "5m": "5m", "15m": "15m", "30m": "30m",
+                "1h": "1h", "4h": "4h", "1d": "1d", "1wk": "1w"
+            }
+            timeframe = timeframe_map.get(interval, "1h")
+            
+            count_map = {"1mo": 720, "3mo": 2160, "6mo": 4320, "1y": 8760, "5y": 43800}
+            count = count_map.get(period, 1000)
+            
+            data = client.fetch_candles(symbol, timeframe, count)
+            client.disconnect()
+            return data
+        except:
+            return pd.DataFrame()
+    
+    def fetch_from_binance(self, symbol: str, period: str = "1y", 
+                           interval: str = "1d") -> pd.DataFrame:
+        """Fetch data from Binance public API"""
+        binance_symbol = symbol.replace("-", "").replace("=", "").replace("/", "")
+        if not binance_symbol.endswith("USDT"):
+            binance_symbol += "USDT"
+        
+        interval_map = {
+            "1m": "1m", "5m": "5m", "15m": "15m", "30m": "30m",
+            "1h": "1h", "4h": "4h", "1d": "1d", "1wk": "1w"
+        }
+        binance_interval = interval_map.get(interval, "1d")
+        
+        limit_map = {"1mo": 30, "3mo": 90, "6mo": 180, "1y": 365, "5y": 1825}
+        limit = min(limit_map.get(period, 365), 1000)
+        
+        url = "https://api.binance.com/api/v3/klines"
+        params = {"symbol": binance_symbol, "interval": binance_interval, "limit": limit}
+        
+        try:
+            response = requests.get(url, params=params, timeout=10)
+            data = response.json()
+            
+            if not data:
+                return pd.DataFrame()
+            
+            df = pd.DataFrame(data, columns=[
+                'time', 'Open', 'High', 'Low', 'Close', 'Volume',
+                'close_time', 'quote_volume', 'trades', 'taker_buy_base',
+                'taker_buy_quote', 'ignore'
+            ])
+            
+            df['time'] = pd.to_datetime(df['time'], unit='ms')
+            df.set_index('time', inplace=True)
+            df = df[['Open', 'High', 'Low', 'Close', 'Volume']].astype(float)
+            
+            return df
+        except:
+            return pd.DataFrame()
     
     def _convert_symbol_to_oanda(self, symbol: str) -> str:
         """Convert Yahoo Finance symbol to OANDA format"""
