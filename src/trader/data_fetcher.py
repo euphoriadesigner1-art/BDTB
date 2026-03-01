@@ -88,7 +88,9 @@ class DataFetcher:
                            interval: str = "1d") -> pd.DataFrame:
         """Fetch data from Binance public API"""
         binance_symbol = symbol.replace("-", "").replace("=", "").replace("/", "")
-        if not binance_symbol.endswith("USDT"):
+        if "USD" in binance_symbol:
+            binance_symbol = binance_symbol.replace("USD", "USDT")
+        elif not binance_symbol.endswith("USDT"):
             binance_symbol += "USDT"
         
         interval_map = {
